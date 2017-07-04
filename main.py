@@ -51,7 +51,7 @@ for book in books:
             idxs_total.append(idxs);
 
 N = num_words;
-D = 375;
+D = 150;
 K = 2;
 
 U = {n:[] for n in range(N)};
@@ -72,28 +72,34 @@ for idxs in idxs_total:
 w2v = word2vec(U,G,D);
 
 it = 0;
-while it < 15:
+while it < 25:
     print it;
     it += 1;
-    w2v.step(10,2,1e-6,1e-4);
+    w2v.step(10,1,1e-5,1e-2);
 
 np.savetxt('w2vX.txt',w2v.X);
 np.savetxt('idx2word.txt',idx2word,fmt="%s");
 np.savetxt('idx2cont.txt',idx2cont);
-a = np.argsort(-np.array(idx2cont));
 
-l = a[:1000:2];
+a = np.argsort(-np.array(idx2cont));
+l = a;
 X = w2v.X[:,l];
 
-XtX = np.dot(X.T,X);
-dX = np.diag(XtX);
+D = np.zeros((len(l),len(l)));
+for i in range(len(l)):
+    for j in range(i+1,len(l)):
+        x = X[:,i];
+        x /= np.linalg.norm(x);
+        y = X[:,j];
+        y /= np.linalg.norm(y);
+        D[i,j] = 1.0-np.arccos(np.dot(x,y))/np.pi;
+        D[j,i] = D[i,j];
+Jc = np.eye(D.shape[0])-np.ones((D.shape[0],D.shape[0]))/D.shape[0];
+E,V = np.linalg.eig(-Jc*D*Jc);
+x = V[:,0]/E[0];
+y = V[:,1]/E[1];
 
-D2 = np.outer(np.ones(XtX.shape[0]),dX)+np.outer(dX,np.ones(XtX.shape[0]))-2.0*XtX;
-J = np.eye(XtX.shape[0])-np.ones((XtX.shape[0],XtX.shape[0]))/XtX.shape[0];
-
-E,V = np.linalg.eig(-J*D2*J);
-
-f = plt.scatter(V[:,0],V[:,1],marker='o',s=3,c=range(len(l)),cmap='hot');
-for w,x,y in zip(l,V[:,0],V[:,1]):
-    plt.annotate(idx2word[w],xy=(x,y))
+f = plt.scatter(x,y,marker='o',s=3,c=a,cmap='hot');
+for w,x_,y_ in zip(l,x,y):
+    plt.annotate(idx2word[w],xy=(x_,y_))
 plt.show();

@@ -30,9 +30,13 @@ class word2vec:
         self.D = D; #dimen
         self.V = len(G);
         
-        self.X  = rd.randn(self.D,self.V);
+        self.X  = rd.randn(self.D,self.V); 
         self.dX = np.zeros(self.X.shape);
         self.mX = np.zeros(self.X.shape);
+        
+        self.Y  = rd.randn(self.D,self.V);
+        self.dY = np.zeros(self.Y.shape);
+        self.mY = np.zeros(self.Y.shape);
         
         self.IT = 10;
         self.it = 0;
@@ -42,36 +46,48 @@ class word2vec:
         return self.U[u][r];
     
     def get_wor(self,u,K):
-        w = [u];
-        t = [1.0];
+        w = [];
+        t = [];
         for k in range(K):
             r = rd.randint(self.V);
-            while r in self.G[u]:
+            while r in self.G[u] or r == u:
                 r = rd.randint(self.V);
             w.append(r);
             t.append(-1.0);
+        for k in range(K):
+            r = rd.randint(self.V);
+            while r not in self.G[u] or r == u:
+                r = rd.randint(self.V);
+            w.append(r);
+            t.append(1.0);
         return np.array(t),np.array(w);
     
     def step(self,B,K,dt,mu):
+        mmX = np.zeros(self.mX.shape);
+        mmY = np.zeros(self.mY.shape);
         for u in range(self.V):
+            mf  = 0.0;
             for b in range(B):
-                v   = self.get_tup(u);
                 t,w = self.get_wor(u,K);
             
-                mv = self.mX[:,v];
-                xv = self.X[:,v];
-            
-                xu = np.sum(xv+dt*mu*mv,axis=1);
-                Yw = self.X[:,w]+dt*mu*self.mX[:,w];
+                xu = self.X[:,u]+dt*mu*self.mX[:,u];
+                Yw = self.Y[:,w]+dt*mu*self.mY[:,w];
                 
                 f = J(xu,Yw,t);
-                print u, f;
+                mf += f/B;
                 
                 dYw,dxu = dJ(xu,Yw,t);
-                mmX = np.zeros(self.mX.shape);
-                mmX[:,w] += dYw;
-                mmX[:,v] += np.outer(dxu,np.ones(len(v)));
-                
+                mmX[:,u] += dxu/B;
+                mmY[:,w] += dYw/B;
+            print u,mf;
+            if self.it % self.IT == 0:
                 self.mX = mu*self.mX-dt*mmX;
                 self.X += self.mX;
+
+                self.mY = mu*self.mY-dt*mmY;
+                self.Y += self.mY;
+
+                mmX *= mu;
+                mmY *= mu;
+            self.it += 1;
             

@@ -82,7 +82,7 @@ np.savetxt('idx2word.txt',idx2word,fmt="%s");
 np.savetxt('idx2cont.txt',idx2cont);
 a = np.argsort(-np.array(idx2cont));
 
-l = a[::10];
+l = a[:1000:2];
 X = w2v.X[:,l];
 
 XtX = np.dot(X.T,X);

@@ -13,14 +13,14 @@ import matplotlib.pyplot as plt;
 def sigm(t):
     return 1.0/(1.0+np.exp(-t));
 
-def J(x,w,t):
-    s = sigm(t*np.dot(w,x));
+def J(x,Y,t):
+    s = sigm(t*np.dot(Y.T,x));
     return -np.sum(np.log(s));
 
-def dJ(x,w,t):
-    s  = sigm(t*np.dot(w,x));
-    dw = -np.outer(t*(1.0-s),x);
-    dx = -np.dot(t*(1.0-s),w);
+def dJ(x,Y,t):
+    s  = sigm(t*np.dot(Y.T,x));
+    dw = -np.outer(t*(1.0-s),x).T;
+    dx = -np.dot(t*(1.0-s),Y.T);
     return dw,dx;
 
 class word2vec:
@@ -29,10 +29,6 @@ class word2vec:
         self.G = G; #dict of adyacency graph for sampling
         self.D = D; #dimen
         self.V = len(G);
-        
-        self.a  = 0.5*rd.randn(self.V,self.D)/self.V;
-        self.da = np.zeros(self.a.shape);
-        self.ma = np.zeros(self.a.shape);
         
         self.X  = rd.randn(self.D,self.V);
         self.dX = np.zeros(self.X.shape);
@@ -66,16 +62,16 @@ class word2vec:
                 xv = self.X[:,v];
             
                 xu = np.sum(xv+dt*mu*mv,axis=1);
-                aw = self.a[w,:]+dt*mu*self.ma[w,:];
+                Yw = self.X[:,w]+dt*mu*self.mX[:,w];
                 
-                f = J(xu,aw,t);
+                f = J(xu,Yw,t);
                 print u, f;
                 
-                daw,dxu = dJ(xu,aw,t);
+                dYw,dxu = dJ(xu,Yw,t);
+                mmX = np.zeros(self.mX.shape);
+                mmX[:,w] += dYw;
+                mmX[:,v] += np.outer(dxu,np.ones(len(v)));
                 
-                self.ma[w,:] = mu*self.ma[w,:]-dt*daw;
-                self.mX[:,v] = mu*self.mX[:,v]-dt*np.outer(dxu,np.ones(len(v)));
-            
-                self.a += self.ma;
+                self.mX = mu*self.mX-dt*mmX;
                 self.X += self.mX;
             

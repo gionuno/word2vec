@@ -3,3 +3,4 @@ An attempt at word2vec with negative sampling, and Nesterov's Accelerated Gradie
 
 ![image](mds_ecclesiastes.png)
 
+Keep in mind, that this is a *very rudimentary* implementation.

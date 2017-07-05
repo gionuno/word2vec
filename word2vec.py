@@ -31,11 +31,9 @@ class word2vec:
         self.V = len(G);
         
         self.X  = rd.randn(self.D,self.V)/np.sqrt(self.D); 
-        self.dX = np.zeros(self.X.shape);
         self.mX = np.zeros(self.X.shape);
         
         self.Y  = rd.randn(self.D,self.V)/np.sqrt(self.D);
-        self.dY = np.zeros(self.Y.shape);
         self.mY = np.zeros(self.Y.shape);
         
         self.IT = 10;
@@ -58,24 +56,26 @@ class word2vec:
         return np.array(self.U[u][r]),np.array(t),np.array(w);
     
     def step(self,B,K,dt,mu):
-        mmX = np.zeros(self.mX.shape);
-        mmY = np.zeros(self.mY.shape);
         for u in range(self.V):
             mf  = 0.0;
-            for b in range(B):
-                
+            for b in range(B):                
                 v,t,w = self.get_contexts(u,K);
                 
                 xu = np.mean(self.X[:,v],1);
                 Yw = self.Y[:,w];
-                
-                f = J(xu,Yw,t);
+                f = J(xu,Yw,t);                
                 mf += f/B;
-                
+
+                xu = np.mean(self.X[:,v]+mu*self.mX[:,v],1);
+                Yw = self.Y[:,w]+mu*self.mY[:,w];                
+
                 dYw,dxu = dJ(xu,Yw,t);
                 
-                self.X[:,v] -= dt*np.outer(dxu,np.ones(v.shape[0]))/(v.shape[0]*B);
-                self.Y[:,w] -= dt*dYw/B;
+                self.mX[:,v] = mu*self.mX[:,v]-dt*np.outer(dxu,np.ones(v.shape[0]))/(v.shape[0]*B);
+                self.X[:,v] += self.mX[:,v];
+                
+                self.mY[:,w] = mu*self.mY[:,w]-dt*dYw;
+                self.Y[:,w] += self.mY[:,w];
                 
             print self.it,u,mf;
         self.it += 1;

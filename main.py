@@ -51,8 +51,8 @@ for book in books:
             idxs_total.append(idxs);
 
 N = num_words;
-D = 250;
-K = 1;
+D = 150;
+K = 3;
 
 U = {n:[] for n in range(N)};
 G = {n:[] for n in range(N)};
@@ -72,13 +72,13 @@ for idxs in idxs_total:
 w2v = word2vec(U,G,D);
 
 it = 0;
-while it < 100:
+while it < 200:
     print it;
     it += 1;
-    w2v.step(10,2,1e-2,0.5);
+    w2v.step(10,10,1e1,1e-3);
 
 a = np.argsort(-np.array(idx2cont));
-l = a[10:];
+l = a;
 X = w2v.X[:,l];
 
 Di = np.zeros((len(l),len(l)));
